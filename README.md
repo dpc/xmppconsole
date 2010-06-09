@@ -1,8 +1,8 @@
-= Introduction
+# Introduction
 
 This is (will be) simple, but handy XMPP client using libstrophe.
 
-= Status
+# Status
 
 It's fresh and new. Please expect bugs.
 
