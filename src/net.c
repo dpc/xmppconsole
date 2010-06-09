@@ -9,6 +9,7 @@
 static xmpp_ctx_t *ctx = NULL;
 static xmpp_conn_t *conn = NULL;
 static xmpp_log_t *log;
+static char* current_recipent = NULL;
 
 int version_handler(
 		xmpp_conn_t * const conn, xmpp_stanza_t * const stanza,
@@ -67,9 +68,7 @@ int message_handler(
 		void * const userdata
 		)
 {
-	xmpp_stanza_t *reply, *body, *text;
-	char *intext, *replytext;
-	xmpp_ctx_t *ctx = (xmpp_ctx_t*)userdata;
+	char *intext;
 
 	if(!xmpp_stanza_get_child_by_name(stanza, "body")) return 1;
 	if(!strcmp(xmpp_stanza_get_attribute(stanza, "type"), "error")) return 1;
@@ -84,32 +83,53 @@ int message_handler(
 			intext
 			);
 
-	reply = xmpp_stanza_new(ctx);
+
+	return 1;
+}
+
+void send(const char* const str) {
+	xmpp_stanza_t *reply, *body, *text, *msg;
+	if (!current_recipent || strcmp(current_recipent, "") == 0) {
+		printf_async("No recipent selected.");
+		return;
+	}
+
+	msg = xmpp_stanza_new(ctx);
 	xmpp_stanza_set_name(reply, "message");
-	xmpp_stanza_set_type(
-			reply,
-			xmpp_stanza_get_type(stanza)?xmpp_stanza_get_type(stanza):"chat"
-			);
+	xmpp_stanza_set_type(msg, "chat");
 	xmpp_stanza_set_attribute(
-			reply, "to", xmpp_stanza_get_attribute(stanza, "from")
+			msg, "to", current_recipent
 			);
 
 	body = xmpp_stanza_new(ctx);
 	xmpp_stanza_set_name(body, "body");
 
-	replytext = malloc(strlen(" to you too!") + strlen(intext) + 1);
-	strcpy(replytext, intext);
-	strcat(replytext, " to you too!");
 
 	text = xmpp_stanza_new(ctx);
-	xmpp_stanza_set_text(text, replytext);
+	xmpp_stanza_set_text(text, str);
 	xmpp_stanza_add_child(body, text);
 	xmpp_stanza_add_child(reply, body);
 
 	xmpp_send(conn, reply);
 	xmpp_stanza_release(reply);
-	free(replytext);
-	return 1;
+}
+
+static void connected(xmpp_conn_t* const conn) {
+	const char* full_jid = xmpp_conn_get_bound_jid(conn);
+	char* s = strdup(full_jid);
+	char* node;
+	char* prompt;
+
+	printf_async("Connected as %s.\n", full_jid);
+
+	node = strtok(s, "@");
+
+	prompt = malloc(strlen(node) + sizeof(": "));
+	strcpy(prompt, node);
+	strcat(prompt, ": ");
+	set_prompt(node);
+	free(s);
+	free(prompt);
 }
 
 static void conn_handler(
@@ -121,7 +141,8 @@ static void conn_handler(
 	xmpp_stanza_t* pres;
 
 	if (status == XMPP_CONN_CONNECT) {
-		printf_async("Connected.\n");
+		connected(conn);
+
 		xmpp_handler_add(conn, version_handler, "jabber:iq:version", "iq", NULL, ctx);
 		xmpp_handler_add(conn, message_handler, NULL, "message", NULL, ctx);
 
@@ -151,6 +172,7 @@ void disconnect_net() {
 		conn = NULL;
 		printf_async("Disconnected.\n");
 	}
+	set_prompt(DEFAULT_PROMPT);
 }
 
 void connect_net(const char* const jid, const char* const pass) {
@@ -174,4 +196,15 @@ void deinit_net() {
 
 void nonblock_handle_net() {
 	xmpp_run_once(ctx, 10);
+}
+
+
+void set_current_recipent(const char* const jid) {
+	if (current_recipent != NULL) {
+		free(current_recipent);
+	}
+	current_recipent = strdup(jid);
+	if (!current_recipent) {
+		abort();
+	}
 }

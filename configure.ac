@@ -6,6 +6,7 @@ AC_PROG_RANLIB
 AM_PROG_CC_C_O
 
 PKG_CHECK_MODULES([check], [check >= 0.9.4])
+PKG_CHECK_MODULES([ustr], [ustr >= 1.0.4])
 
 AC_ARG_WITH([libxml2], 
             [AS_HELP_STRING([--with-libxml2], [use libxml2 for XML parsing])],

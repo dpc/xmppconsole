@@ -31,6 +31,27 @@ ret:
 	free(s);
 }
 
+void cmd_disconnect(const char* const str) {
+	char* s;
+	char* cmd;
+	char* rest;
+
+	s = strdup(str);
+	if (!s) {
+		abort();
+	}
+
+	cmd = strtok(s, " \t");
+	rest = strtok(NULL, " \t");
+	if (rest) {
+		printf_async("usage: /quit\n");
+		goto ret;
+	}
+	disconnect_net();
+ret:
+	free(s);
+}
+
 void cmd_quit(const char * const str) {
 	char* cmd;
 	char* rest;

@@ -11,6 +11,7 @@ struct cmd_t {
 
 static struct cmd_t cmds[] = {
 	{ "connect", cmd_connect },
+	{ "disconnect", cmd_disconnect },
 	{ "quit", cmd_quit}
 };
 

@@ -1,3 +1,4 @@
+#define DEFAULT_PROMPT "> "
 
 void init_io();
 void deinit_io();

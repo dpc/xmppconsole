@@ -33,7 +33,7 @@ ret:
 
 void init_io() {
 	FD_ZERO(&fds);
-	set_prompt("> ");
+	set_prompt(DEFAULT_PROMPT);
 	rl_callback_handler_install(prompt, handle_line);
 }
 
