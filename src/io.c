@@ -11,6 +11,7 @@
 
 static char* prompt = NULL;
 static fd_set fds;
+static int debug_on = 0;
 
 static void handle_line(char* line) {
 	if (line == NULL) {
@@ -31,13 +32,23 @@ ret:
 	return;
 }
 
-void init_io() {
+void io_switch_debug() {
+	debug_on = !debug_on;
+}
+
+void io_debug(const char * const str) {
+	if (debug_on) {
+		printf_async("%s\n", str);
+	}
+}
+
+void io_init() {
 	FD_ZERO(&fds);
-	set_prompt(DEFAULT_PROMPT);
+	io_set_prompt(DEFAULT_PROMPT);
 	rl_callback_handler_install(prompt, handle_line);
 }
 
-void nonblock_handle_io() {
+void io_nonblock_handle() {
 	int count;
 	struct timeval t;
 
@@ -54,11 +65,11 @@ void nonblock_handle_io() {
 	rl_callback_read_char();
 }
 
-void deinit_io() {
+void io_deinit() {
 	rl_callback_handler_remove();
 }
 
-void set_prompt(const char* const str) {
+void io_set_prompt(const char* const str) {
 	if (prompt == NULL) {
 		free(prompt);
 	}
@@ -66,6 +77,12 @@ void set_prompt(const char* const str) {
 	if (prompt == NULL) {
 		abort();
 	}
+	if (prog_running) {
+		rl_set_prompt(str);
+	} else {
+		rl_set_prompt("");
+	}
+	rl_redisplay();
 }
 
 

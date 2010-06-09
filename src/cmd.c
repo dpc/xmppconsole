@@ -1,6 +1,7 @@
 #include "cmd.h"
 #include "cmds.h"
 #include "io.h"
+#include "net.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -12,6 +13,7 @@ struct cmd_t {
 static struct cmd_t cmds[] = {
 	{ "connect", cmd_connect },
 	{ "disconnect", cmd_disconnect },
+	{ "debug", cmd_debug},
 	{ "quit", cmd_quit}
 };
 
@@ -33,9 +35,11 @@ ret:
 }
 
 static void cmd_at(const char * const str) {
+	net_set_current_recipent(str);
 }
 
 static void cmd_msg(const char * const str) {
+	net_send(str);
 }
 
 void interprete(const char * const str) {

@@ -1,6 +1,7 @@
-void init_net();
-void nonblock_handle_net();
-void connect_net(const char* const jid, const char* const pass);
-void disconnect_net();
-void deinit_net();
-void set_current_recipent(const char* const jid);
+void net_init();
+void net_nonblock_handle();
+void net_connect(const char* const jid, const char* const pass);
+void net_disconnect();
+void net_deinit();
+void net_set_current_recipent(const char* const jid);
+void net_send(const char* const str);

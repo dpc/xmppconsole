@@ -8,7 +8,6 @@
 
 static xmpp_ctx_t *ctx = NULL;
 static xmpp_conn_t *conn = NULL;
-static xmpp_log_t *log;
 static char* current_recipent = NULL;
 
 int version_handler(
@@ -69,6 +68,7 @@ int message_handler(
 		)
 {
 	char *intext;
+	char *node, *s;
 
 	if(!xmpp_stanza_get_child_by_name(stanza, "body")) return 1;
 	if(!strcmp(xmpp_stanza_get_attribute(stanza, "type"), "error")) return 1;
@@ -76,26 +76,25 @@ int message_handler(
 	intext = xmpp_stanza_get_text(
 			xmpp_stanza_get_child_by_name(stanza, "body")
 			);
+	
+	s = strdup(xmpp_stanza_get_attribute(stanza, "from"));
+	node = strtok(s, "@");
 
-	printf_async(
-			"%s: %s\n",
-			xmpp_stanza_get_attribute(stanza, "from"),
-			intext
-			);
-
+	printf_async("%s: %s\n", node, intext);
+	free(s);
 
 	return 1;
 }
 
-void send(const char* const str) {
-	xmpp_stanza_t *reply, *body, *text, *msg;
+void net_send(const char* const str) {
+	xmpp_stanza_t *msg, *body, *text;
 	if (!current_recipent || strcmp(current_recipent, "") == 0) {
 		printf_async("No recipent selected.");
 		return;
 	}
 
 	msg = xmpp_stanza_new(ctx);
-	xmpp_stanza_set_name(reply, "message");
+	xmpp_stanza_set_name(msg, "message");
 	xmpp_stanza_set_type(msg, "chat");
 	xmpp_stanza_set_attribute(
 			msg, "to", current_recipent
@@ -108,10 +107,10 @@ void send(const char* const str) {
 	text = xmpp_stanza_new(ctx);
 	xmpp_stanza_set_text(text, str);
 	xmpp_stanza_add_child(body, text);
-	xmpp_stanza_add_child(reply, body);
+	xmpp_stanza_add_child(msg, body);
 
-	xmpp_send(conn, reply);
-	xmpp_stanza_release(reply);
+	xmpp_send(conn, msg);
+	xmpp_stanza_release(msg);
 }
 
 static void connected(xmpp_conn_t* const conn) {
@@ -127,7 +126,7 @@ static void connected(xmpp_conn_t* const conn) {
 	prompt = malloc(strlen(node) + sizeof(": "));
 	strcpy(prompt, node);
 	strcat(prompt, ": ");
-	set_prompt(node);
+	io_set_prompt(prompt);
 	free(s);
 	free(prompt);
 }
@@ -152,31 +151,40 @@ static void conn_handler(
 		xmpp_stanza_release(pres);
 	} else {
 		printf_async("Connection failed.\n");
-		disconnect_net();
+		net_disconnect();
 	}
 
 }
-void init_net(char* jid, char* passwd) {
+
+void log_handler(void * const userdata, 
+		const xmpp_log_level_t level,
+		const char * const area,
+		const char * const msg) {
+	io_debug(msg);
+}
+
+struct _xmpp_log_t logger;
+
+void net_init(char* jid, char* passwd) {
 	xmpp_initialize();
 
 	/* create a context */
-	/*	log = xmpp_get_default_logger(XMPP_LEVEL_DEBUG); */
-	log = NULL;
-	ctx = xmpp_ctx_new(NULL, log);
+	logger.handler = log_handler;
+	ctx = xmpp_ctx_new(NULL, &logger);
 
 }
 
-void disconnect_net() {
+void net_disconnect() {
 	if (conn != NULL) {
 		xmpp_conn_release(conn);
 		conn = NULL;
 		printf_async("Disconnected.\n");
 	}
-	set_prompt(DEFAULT_PROMPT);
+	io_set_prompt(DEFAULT_PROMPT);
 }
 
-void connect_net(const char* const jid, const char* const pass) {
-	disconnect_net();
+void net_connect(const char* const jid, const char* const pass) {
+	net_disconnect();
 	printf_async("Connecting as %s.\n", jid);
 
 	assert(!conn);
@@ -188,18 +196,18 @@ void connect_net(const char* const jid, const char* const pass) {
 	xmpp_connect_client(conn, NULL, 0, conn_handler, ctx);
 }
 
-void deinit_net() {
-	disconnect_net();
+void net_deinit() {
+	net_disconnect();
 	xmpp_ctx_free(ctx);
 	xmpp_shutdown();
 }
 
-void nonblock_handle_net() {
-	xmpp_run_once(ctx, 10);
+void net_nonblock_handle() {
+	xmpp_run_once(ctx, 1);
 }
 
 
-void set_current_recipent(const char* const jid) {
+void net_set_current_recipent(const char* const jid) {
 	if (current_recipent != NULL) {
 		free(current_recipent);
 	}
@@ -207,4 +215,5 @@ void set_current_recipent(const char* const jid) {
 	if (!current_recipent) {
 		abort();
 	}
+	printf_async("Chat with: %s\n", jid);
 }

@@ -1,0 +1,4 @@
+./bootstrap.sh (if from repostiory)
+./configure
+make
+make install
