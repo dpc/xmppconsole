@@ -2,7 +2,7 @@ AUTOMAKE_OPTIONS = subdir-objects
 
 AM_CFLAGS = -g -Wall -pedantic
 
-XMPPCONSOLE_LIBS = -lstrophe $(PARSER_LIBS) -lssl -lresolv -lreadline -lexpat
+XMPPCONSOLE_LIBS = -lstrophe $(PARSER_LIBS) -lssl -lresolv -lreadline
 
 ## Main build targets
 bin_PROGRAMS = xmppconsole

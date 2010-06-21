@@ -7,7 +7,7 @@ AM_PROG_CC_C_O
 
 AC_SEARCH_LIBS([strophe], [strophe])
 
-AC_SUBST(PARSER_NAME)                              
+AC_SUBST(PARSER_NAME)
 AC_SUBST(PARSER_CFLAGS)
 AC_SUBST(PARSER_LIBS)
 AC_CONFIG_FILES([Makefile])
