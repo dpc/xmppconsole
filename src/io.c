@@ -13,23 +13,42 @@ static char* prompt = NULL;
 static fd_set fds;
 static int debug_on = 0;
 
-static void handle_line(char* line) {
-	if (line == NULL) {
-		/* eof */
-		prog_running = 0;
-		goto ret;
+static void handle_line_fake(char* line) {
+	if (line != NULL) {
+		if (prog_running) {
+			rl_set_prompt(prompt);
+			rl_already_prompted = 1;
+		}
+		return;
 	}
+	prog_running = 0;
 
-	cmd_execute(line);
-	if (strcmp(line, "") != 0) {
-		add_history(line);
-	}
-ret:
 	rl_set_prompt("");
 	rl_replace_line("", 0);
 	rl_redisplay();
 	rl_set_prompt(prompt);
-	return;
+}
+
+int io_handle_enter(int x, int y) {
+	char* line = NULL;
+
+	line = rl_copy_text(0, rl_end);
+	rl_set_prompt("");
+	rl_replace_line("", 1);
+	rl_redisplay();
+
+	cmd_execute(line);
+
+
+
+	if (strcmp(line, "") != 0) {
+		add_history(line);
+	}
+	free(line);
+
+	/* force readline to think that the current line was "eaten" and execute */
+	rl_done = 1;
+	return 0;
 }
 
 void io_debug_set(bool s) {
@@ -40,21 +59,16 @@ bool io_debug_get() {
 	return debug_on;
 }
 
-void io_debugln(const char * const fmt, ...) {
-	va_list args;
-	if (debug_on) {
-		va_start(args, fmt);
-		io_printfln(fmt, args);
-		va_end(args);
-	}
-}
-
 void io_init() {
 	FD_ZERO(&fds);
-	io_set_prompt(DEFAULT_PROMPT);
-	rl_callback_handler_install(prompt, handle_line);
+	io_prompt_set(NET_ST_DISCONNECTED);
+	rl_callback_handler_install(prompt, handle_line_fake);
 	rl_readline_name = prog_name;
 	rl_attempted_completion_function = cmd_root_autocompleter;
+	if (rl_bind_key(RETURN, io_handle_enter)) {
+		io_printfln("failed to bind RETURN");
+		abort();
+	}
 }
 
 void io_nonblock_handle() {
@@ -78,7 +92,31 @@ void io_deinit() {
 	rl_callback_handler_remove();
 }
 
-void io_set_prompt(const char* const str) {
+void io_prompt_set(net_status_t st) {
+	switch (st) {
+		case NET_ST_DISCONNECTED:
+			prompt = "_> ";
+			break;
+		case NET_ST_OFFLINE:
+			prompt = "#> ";
+			break;
+		case NET_ST_ONLINE:
+			prompt = "=> ";
+			break;
+		default:
+			prompt = "?> ";
+			break;
+	}
+	rl_set_prompt(prompt);
+	rl_redisplay();
+}
+
+const char* io_prompt_get() {
+	return prompt;
+}
+
+/*
+void io_set_prompt(net_status_t st) {
 	if (prompt == NULL) {
 		free(prompt);
 	}
@@ -92,11 +130,10 @@ void io_set_prompt(const char* const str) {
 		rl_set_prompt("");
 	}
 	rl_redisplay();
-}
+}*/
 
 
-void io_printfln(const char* const fmt, ...) {
-	va_list args;
+void io_vprintfln(const char* const fmt, va_list args) {
 	char* saved_line;
 	int saved_point;
 
@@ -105,9 +142,7 @@ void io_printfln(const char* const fmt, ...) {
 	rl_set_prompt("");
 	rl_replace_line("", 0);
 	rl_redisplay();
-	va_start(args, fmt);
 	vprintf(fmt, args);
-	va_end(args);
 	printf("\n");
 	if (prog_running) {
 		rl_set_prompt(prompt);
@@ -118,4 +153,19 @@ void io_printfln(const char* const fmt, ...) {
 	free(saved_line);
 }
 
+void io_printfln(const char* const fmt, ...) {
+	va_list args;
+	va_start(args, fmt);
+	io_vprintfln(fmt, args);
+	va_end(args);
+}
+
+void io_debugln(const char * const fmt, ...) {
+	va_list args;
+	if (debug_on) {
+		va_start(args, fmt);
+		io_vprintfln(fmt, args);
+		va_end(args);
+	}
+}
 

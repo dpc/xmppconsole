@@ -127,11 +127,11 @@ void cmd_select_h(const cmd_tokenized_node_t* tokens) {
 	ARGGET(alias);
 	ARGEND;
 
-	io_debug_set(false);
-
+	net_set_current_recipent(alias);
 ret:
 	return;
 }
+
 void cmds_default(const char* str) {
-	net_set_current_recipent(str);
+	net_send(str);
 }

@@ -19,7 +19,7 @@ int main() {
 		net_nonblock_handle();
 	}
 
-	io_printfln("Exiting...\n");
+	io_printfln("Exiting...");
 	net_deinit();
 	io_deinit();
 	return 0;

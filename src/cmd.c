@@ -88,7 +88,6 @@ static void cmd_traverse(
 	}
 
 
-	io_debugln("looking for a match for `%s' token", state->token->name);
 	while (*i != NULL) {
 		if (strcmp((*i)->name, state->token->name) == 0) {
 			state->root = (*i)->sub;
@@ -132,25 +131,12 @@ char** cmd_root_autocompleter(
 
 	rl_attempted_completion_over = 1;
 
-	/* no completion for lines not starting with / */
-	if (strncmp("/", rl_line_buffer, 1) != 0) {
-		return NULL;
-	}
-
 	tokens = state.token = cmd_tokenize(rl_line_buffer, rl_line_buffer + start);
 	state.root = cmds_root;
 	state.cmd = NULL;
 	cmd_traverse(&state);
 
-	if (state.cmd) {
-		io_debugln("cmd: %s", state.cmd->name);
-	}
-
-	if (!state.root) {
-		io_debugln("NULL root - nothing to complete");
-	} else {
-		io_debugln("root: %d-%d: %s", start, end, text);
-
+	if (state.root) {
 		cmd_matches_generator_cur_root = state.root;
 		matches = rl_completion_matches(text, cmd_matches_generator);
 	}
@@ -164,13 +150,13 @@ static void cmd_execute_slash(const char* s) {
 	cmd_tokenized_node_t* tokens = NULL;
 	cmd_traverse_state_t state;
 
-	tokens = state.token = cmd_tokenize(rl_line_buffer, rl_line_buffer + strlen(rl_line_buffer));
+	tokens = state.token = cmd_tokenize(s, s + strlen(s));
 	state.root = cmds_root;
 	state.cmd = NULL;
 	cmd_traverse(&state);
 
 	if (!state.cmd) {
-		io_printfln("Unknown command: %s", state.token->name);
+		io_printfln("Unknown command: `%s'", state.token->name);
 		goto ret;
 	}
 
@@ -205,6 +191,7 @@ void cmd_execute(const char* str) {
 	}
 
 	if (str[0] == '/') {
+		io_printfln("%s%s", io_prompt_get(), str);
 		cmd_execute_slash(str);
 	} else {
 		cmds_default(str);
