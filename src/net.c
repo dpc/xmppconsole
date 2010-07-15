@@ -18,7 +18,7 @@ int version_handler(
 	xmpp_stanza_t *reply, *query, *name, *version, *text;
 	char *ns;
 	xmpp_ctx_t *ctx = (xmpp_ctx_t*)userdata;
-	printf_async(
+	io_printfln(
 			"Received version request from %s\n",
 			xmpp_stanza_get_attribute(stanza, "from")
 			);
@@ -80,7 +80,7 @@ int message_handler(
 	s = strdup(xmpp_stanza_get_attribute(stanza, "from"));
 	node = strtok(s, "@");
 
-	printf_async("%s: %s\n", node, intext);
+	io_printfln("%s: %s\n", node, intext);
 	free(s);
 
 	return 1;
@@ -89,7 +89,7 @@ int message_handler(
 void net_send(const char* const str) {
 	xmpp_stanza_t *msg, *body, *text;
 	if (!current_recipent || strcmp(current_recipent, "") == 0) {
-		printf_async("No recipent selected.");
+		io_printfln("No recipent selected.");
 		return;
 	}
 
@@ -119,7 +119,7 @@ static void connected(xmpp_conn_t* const conn) {
 	char* node;
 	char* prompt;
 
-	printf_async("Connected as %s.\n", full_jid);
+	io_printfln("Connected as %s.\n", full_jid);
 
 	node = strtok(s, "@");
 
@@ -150,7 +150,7 @@ static void conn_handler(
 		xmpp_send(conn, pres);
 		xmpp_stanza_release(pres);
 	} else {
-		printf_async("Connection failed.\n");
+		io_printfln("Connection failed.\n");
 		net_disconnect();
 	}
 
@@ -160,7 +160,7 @@ void log_handler(void * const userdata,
 		const xmpp_log_level_t level,
 		const char * const area,
 		const char * const msg) {
-	io_debug(msg);
+	io_debugln("%s", msg);
 }
 
 struct _xmpp_log_t logger;
@@ -178,14 +178,14 @@ void net_disconnect() {
 	if (conn != NULL) {
 		xmpp_conn_release(conn);
 		conn = NULL;
-		printf_async("Disconnected.\n");
+		io_printfln("Disconnected.\n");
 	}
 	io_set_prompt(DEFAULT_PROMPT);
 }
 
 void net_connect(const char* const jid, const char* const pass) {
 	net_disconnect();
-	printf_async("Connecting as %s.\n", jid);
+	io_printfln("Connecting as %s.\n", jid);
 
 	assert(!conn);
 	conn = xmpp_conn_new(ctx);
@@ -215,5 +215,5 @@ void net_set_current_recipent(const char* const jid) {
 	if (!current_recipent) {
 		abort();
 	}
-	printf_async("Chat with: %s\n", jid);
+	io_printfln("Chat with: %s\n", jid);
 }

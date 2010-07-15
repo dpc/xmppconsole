@@ -1,4 +1,9 @@
-void cmd_connect(const char * const str);
-void cmd_disconnect(const char * const str);
-void cmd_quit(const char * const str);
-void cmd_debug(const char * const str);
+#ifndef __XC_CMDS_H__
+#define __XC_CMDS_H__
+
+#include "cmd.h"
+
+extern cmd_descriptor_t* cmds_root[];
+
+void cmds_default(const char* str);
+#endif

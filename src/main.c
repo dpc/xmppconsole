@@ -11,7 +11,6 @@ const char* const prog_name = "xmppconsole";
 
 int main() {
 
-	printf("Start.\n");
 	io_init();
 	net_init();
 
@@ -20,7 +19,7 @@ int main() {
 		net_nonblock_handle();
 	}
 
-	printf_async("Exiting...\n");
+	io_printfln("Exiting...\n");
 	net_deinit();
 	io_deinit();
 	return 0;

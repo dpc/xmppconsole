@@ -20,7 +20,7 @@ static void handle_line(char* line) {
 		goto ret;
 	}
 
-	interprete(line);
+	cmd_execute(line);
 	if (strcmp(line, "") != 0) {
 		add_history(line);
 	}
@@ -32,13 +32,20 @@ ret:
 	return;
 }
 
-void io_switch_debug() {
-	debug_on = !debug_on;
+void io_debug_set(bool s) {
+	debug_on = s;
 }
 
-void io_debug(const char * const str) {
+bool io_debug_get() {
+	return debug_on;
+}
+
+void io_debugln(const char * const fmt, ...) {
+	va_list args;
 	if (debug_on) {
-		printf_async("%s\n", str);
+		va_start(args, fmt);
+		io_printfln(fmt, args);
+		va_end(args);
 	}
 }
 
@@ -46,6 +53,8 @@ void io_init() {
 	FD_ZERO(&fds);
 	io_set_prompt(DEFAULT_PROMPT);
 	rl_callback_handler_install(prompt, handle_line);
+	rl_readline_name = prog_name;
+	rl_attempted_completion_function = cmd_root_autocompleter;
 }
 
 void io_nonblock_handle() {
@@ -86,7 +95,7 @@ void io_set_prompt(const char* const str) {
 }
 
 
-void printf_async(const char* const fmt, ...) {
+void io_printfln(const char* const fmt, ...) {
 	va_list args;
 	char* saved_line;
 	int saved_point;
@@ -99,6 +108,7 @@ void printf_async(const char* const fmt, ...) {
 	va_start(args, fmt);
 	vprintf(fmt, args);
 	va_end(args);
+	printf("\n");
 	if (prog_running) {
 		rl_set_prompt(prompt);
 	}
