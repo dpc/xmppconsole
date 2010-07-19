@@ -14,7 +14,10 @@ bool io_debug_get();
 void io_prompt_set(net_status_t status);
 const char* io_prompt_get();
 
+void io_notification(const char* const fmt, ...);
+void io_error(const char* const fmt, ...);
+void io_message(const char* jid, const char* msg);
+void io_debug(const char * const fmt, ...);
 void io_printfln(const char* const fmt, ...);
-void io_debugln(const char * const fmt, ...);
 
 #endif

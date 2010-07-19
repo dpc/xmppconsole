@@ -6,10 +6,10 @@
 #include "io.h"
 #include "main.h"
 #include "util.h"
+#include "msg.h"
 
 static xmpp_ctx_t *ctx = NULL;
 static xmpp_conn_t *conn = NULL;
-static char* current_recipent = NULL;
 
 int version_handler(
 		xmpp_conn_t * const conn, xmpp_stanza_t * const stanza,
@@ -68,8 +68,9 @@ int message_handler(
 		void * const userdata
 		)
 {
+	const char* from;
 	char *intext;
-	char *node, *s;
+	msg_queue_t q;
 
 	if(!xmpp_stanza_get_child_by_name(stanza, "body")) return 1;
 	if(!strcmp(xmpp_stanza_get_attribute(stanza, "type"), "error")) return 1;
@@ -77,31 +78,29 @@ int message_handler(
 	intext = xmpp_stanza_get_text(
 			xmpp_stanza_get_child_by_name(stanza, "body")
 			);
-	
-	s = strdup(xmpp_stanza_get_attribute(stanza, "from"));
-	node = strtok(s, "@");
-
-	io_printfln("%s: %s", node, intext);
-	free(s);
+	from = xmpp_stanza_get_attribute(stanza, "from");
+	q = msg_queue_get(from);
+	msg_queue_write(q, intext);
 
 	return 1;
 }
 
 void net_send(const char* const str) {
-	char* jid;
-	char* node;
+	msg_queue_t q;
+	const char* jid;
 
 	xmpp_stanza_t *msg, *body, *text;
-	if (!current_recipent || strcmp(current_recipent, "") == 0) {
-		io_printfln("No recipent selected.");
+	if (!(q = msg_active_queue_get())) {
+		io_error("No recipient selected.");
 		return;
 	}
+	jid = msg_queue_jid(q);
 
 	msg = xmpp_stanza_new(ctx);
 	xmpp_stanza_set_name(msg, "message");
 	xmpp_stanza_set_type(msg, "chat");
 	xmpp_stanza_set_attribute(
-			msg, "to", current_recipent
+			msg, "to", jid
 			);
 
 	body = xmpp_stanza_new(ctx);
@@ -116,18 +115,13 @@ void net_send(const char* const str) {
 	xmpp_send(conn, msg);
 	xmpp_stanza_release(msg);
 
-	jid = safe_strdup(xmpp_conn_get_jid(conn));
-
-	node = strtok(jid, "@");
-
-	io_printfln("%s: %s", node, str);
-	free(jid);
+	io_message(xmpp_conn_get_bound_jid(conn), str);
 }
 
 static void connected(xmpp_conn_t* const conn) {
 	const char* full_jid = xmpp_conn_get_bound_jid(conn);
 
-	io_printfln("Connected as %s.", full_jid);
+	io_notification("Connected as `%s'.", full_jid);
 	io_prompt_set(NET_ST_OFFLINE);
 }
 
@@ -150,7 +144,7 @@ static void conn_handler(
 		xmpp_send(conn, pres);
 		xmpp_stanza_release(pres);
 	} else {
-		io_printfln("Connection failed.");
+		io_notification("Connection failed.");
 		net_disconnect();
 	}
 
@@ -162,7 +156,7 @@ void log_handler(
 		const char * const area,
 		const char * const msg
 		) {
-	io_debugln("%s", msg);
+	io_debug("%s", msg);
 }
 
 xmpp_log_t logger;
@@ -180,14 +174,14 @@ void net_disconnect() {
 	if (conn != NULL) {
 		xmpp_conn_release(conn);
 		conn = NULL;
-		io_printfln("Disconnected.");
+		io_notification("Disconnected.");
 	}
 	io_prompt_set(NET_ST_DISCONNECTED);
 }
 
 void net_connect(const char* const jid, const char* const pass) {
 	net_disconnect();
-	io_printfln("Connecting as %s.", jid);
+	io_debug("Connecting as `%s'.", jid);
 
 	assert(!conn);
 	conn = xmpp_conn_new(ctx);
@@ -210,14 +204,3 @@ void net_nonblock_handle() {
 	}
 }
 
-
-void net_set_current_recipent(const char* const jid) {
-	if (current_recipent != NULL) {
-		free(current_recipent);
-	}
-	current_recipent = strdup(jid);
-	if (!current_recipent) {
-		abort();
-	}
-	io_printfln("Chat with: %s", jid);
-}

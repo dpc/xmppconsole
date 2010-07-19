@@ -11,4 +11,12 @@ bin_PROGRAMS = xmppconsole
 xmppconsole_CFLAGS = $(XMPPCONSOLE_FLAGS) $(AM_CFLAGS)
 xmppconsole_LDADD = $(XMPPCONSOLE_LIBS)
 xmppconsole_SOURCES = src/main.c src/net.c src/io.c src/cmd.c \
-	src/cmds.c src/util.c
+	src/cmds.c src/util.c src/msg.c
+
+xmppconsoledir = "./"
+xmppconsole_DATA = src/ver.h
+
+src/ver.h: $(xmppconsole_SOURCES)
+	echo -n "#define PROG_VER \"" > src/ver.h
+	git describe | tr -d '\n' >> src/ver.h
+	echo "\"" >> src/ver.h

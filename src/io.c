@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
+#include "util.h"
 #include "main.h"
 
 static char* prompt = NULL;
@@ -95,16 +96,16 @@ void io_deinit() {
 void io_prompt_set(net_status_t st) {
 	switch (st) {
 		case NET_ST_DISCONNECTED:
-			prompt = "_> ";
+			prompt = "__> ";
 			break;
 		case NET_ST_OFFLINE:
-			prompt = "#> ";
+			prompt = "=_> ";
 			break;
 		case NET_ST_ONLINE:
-			prompt = "=> ";
+			prompt = "==> ";
 			break;
 		default:
-			prompt = "?> ";
+			prompt = "=?> ";
 			break;
 	}
 	rl_set_prompt(prompt);
@@ -132,8 +133,9 @@ void io_set_prompt(net_status_t st) {
 	rl_redisplay();
 }*/
 
+typedef void (*print_func)(void*);
 
-void io_vprintfln(const char* const fmt, va_list args) {
+static void io_async_print(print_func func, void* data) {
 	char* saved_line;
 	int saved_point;
 
@@ -142,7 +144,7 @@ void io_vprintfln(const char* const fmt, va_list args) {
 	rl_set_prompt("");
 	rl_replace_line("", 0);
 	rl_redisplay();
-	vprintf(fmt, args);
+	(*func)(data);
 	printf("\n");
 	if (prog_running) {
 		rl_set_prompt(prompt);
@@ -153,19 +155,84 @@ void io_vprintfln(const char* const fmt, va_list args) {
 	free(saved_line);
 }
 
-void io_printfln(const char* const fmt, ...) {
+struct io_async_func_data {
+	const char* fmt;
 	va_list args;
-	va_start(args, fmt);
-	io_vprintfln(fmt, args);
-	va_end(args);
+};
+/*
+void io_vprintfln(const char* const fmt, va_list args) {
+
+	struct io_async_func_data* d = (struct io_async_func_data*)data;
+	vprintf(d->fmt, d->args);
+}*/
+
+static void io_notification_func(void* data) {
+	struct io_async_func_data* d = (struct io_async_func_data*)data;
+
+	printf("*** ");
+	vprintf(d->fmt, d->args);
 }
 
-void io_debugln(const char * const fmt, ...) {
-	va_list args;
+static void io_error_func(void* data) {
+	struct io_async_func_data* d = (struct io_async_func_data*)data;
+
+	printf("!!! ");
+	vprintf(d->fmt, d->args);
+}
+
+
+static void io_print_func(void* data) {
+	struct io_async_func_data* d = (struct io_async_func_data*)data;
+
+	vprintf(d->fmt, d->args);
+}
+
+void io_printfln(const char* const fmt, ...) {
+	struct io_async_func_data d;
+	d.fmt = fmt;
+
+	va_start(d.args, fmt);
+	io_async_print(io_print_func, &d);
+	va_end(d.args);
+}
+
+void io_debug(const char * const fmt, ...) {
+	struct io_async_func_data d;
+	d.fmt = fmt;
+
 	if (debug_on) {
-		va_start(args, fmt);
-		io_vprintfln(fmt, args);
-		va_end(args);
+		va_start(d.args, fmt);
+		io_async_print(io_print_func, &d);
+		va_end(d.args);
 	}
 }
 
+void io_error(const char * const fmt, ...) {
+	struct io_async_func_data d;
+	d.fmt = fmt;
+	
+	va_start(d.args, fmt);
+	io_async_print(io_error_func, &d);
+	va_end(d.args);
+}
+
+
+void io_notification(const char * const fmt, ...) {
+	struct io_async_func_data d;
+	d.fmt = fmt;
+	
+	va_start(d.args, fmt);
+	io_async_print(io_notification_func, &d);
+	va_end(d.args);
+}
+
+void io_message(const char* jid, const char* msg) {
+	char* s;
+	char* node;
+   
+	s = safe_strdup(jid);
+	node = strtok(s, "@");
+
+	io_printfln("%s: %s", node, msg);
+	free(s);
+}

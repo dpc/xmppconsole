@@ -3,7 +3,7 @@
 
 #include "cmd.h"
 
-extern cmd_descriptor_t* cmds_root[];
+extern cmd_descriptor_t cmds_root[];
 
 void cmds_default(const char* str);
 #endif

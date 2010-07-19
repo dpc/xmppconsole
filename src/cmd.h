@@ -9,14 +9,14 @@
 typedef struct cmd_tokenized_node {
 	char* name;
 	struct cmd_tokenized_node *next;
-} cmd_tokenized_node_t;
+} *cmd_tokenized_node_t;
 
 typedef struct cmd_descriptor {
 	char* name;
-	void (*handle)(const cmd_tokenized_node_t*);
+	void (*handle)(const struct cmd_tokenized_node*);
 	struct cmd_descriptor** sub; /* subcommands */
-	void* autocompleter;
-} cmd_descriptor_t;
+	char* (*completer)(int i, const struct cmd_tokenized_node*);
+} *cmd_descriptor_t;
 
 
 void interprete(const char * const str);
