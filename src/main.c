@@ -1,14 +1,13 @@
 #include "io.h"
 #include "net.h"
 #include "msg.h"
-#include "ver.h"
 #include <sys/select.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
 
 int prog_running = 1;
-const char* const prog_version = PROG_VER;
+const char* const prog_version = GIT_VERSION;
 const char* const prog_author = "dpc <dpc@ucore.info>";
 const char* const prog_name = "xmppconsole";
 
