@@ -1,35 +1,46 @@
 # Introduction
 
-This is (or going to be) raw and simple, but handy XMPP client for Unix
+`xmppconsole` goal is to be raw and simple, but very handy XMPP client for Unix
 command-line.
 
 Readline library is used in a neat way to server asynchronous display
-(see ./src/io.c). It looks very nice, really - clean and simple.
+(see ./src/io.c). It looks very nice, really -- clean and simple.
 
 Libstrophe library is used to handle XMPP communication.
 
 # Status
 
-It's fresh and new. Please expect bugs. The code could receive a little cleanup
-but is quite consistent and mostly trivial.
+Project is still fresh and immature. Please expect bugs and continuous
+code changes. However it allows communication.
 
-**I encourage you to collaborate and send me some pull requests!**
+# Building
 
-What is working:
+## Dependences
 
-* /connect <jid> <pass> - attempts to connect to XMPP server
-* /debug - switches debug logging
-* @<jid> - sets current chat recipient
-* Hi! - sens "Hi!" to current message recipient
-* /disconnect
-* /quit
+xmppconsole requires:
 
+* readline (bundled with a system)
+* libstrophe
 
-TODO:
+`readline` is so common that all *nix distributions provide it in
+standard installation. Libstrophe is a C library that can be downloaded from:
+http://code.stanziq.com/strophe/ . If you have any problems with it you
+may try to use my libstrophe fork:
+http://github.com/dpc/libstrophe .
 
-* display notifications about new communication only
-* display received messages after selecting sender as a current recipient
-* jid aliasing (stored server side?)
-* config file
-* roster manipulation
-* more functionality (MUC, PEP, other XEPs)
+## Compilation
+
+After cloning from git and installing all dependences:
+
+	./bootstrap.sh
+	./configure.sh [options]
+	make
+	make install
+
+# Running
+
+In terminal run:
+
+	$ xmppconsole
+
+and just follow the instructions.
