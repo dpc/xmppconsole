@@ -24,10 +24,12 @@ void cmd_connect_h(const struct cmd_tokenized_node* tokens) {
 	char* pass;
 
 	ARGGET(jid);
-	ARGGET(pass);
 	ARGEND;
 
+	pass = io_getpass();
+
 	net_connect(jid, pass);
+	free(pass);
 ret:
 	return;
 }
@@ -35,7 +37,7 @@ ret:
 void cmd_help_h(const struct cmd_tokenized_node* tokens) {
 
 	io_printfln("Basic usage:");
-	io_printfln("/connect <jid> <pass>");
+	io_printfln("/connect <jid>");
 	io_printfln("  -- to connect");
 	io_printfln("/select <jid>");
 	io_printfln("  -- to select recipient");

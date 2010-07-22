@@ -145,7 +145,6 @@ static void io_async_print(print_func func, void* data) {
 	rl_replace_line("", 0);
 	rl_redisplay();
 	(*func)(data);
-	printf("\n");
 	if (prog_running) {
 		rl_set_prompt(prompt);
 	}
@@ -171,6 +170,7 @@ static void io_notification_func(void* data) {
 
 	printf("*** ");
 	vprintf(d->fmt, d->args);
+	printf("\n");
 }
 
 static void io_error_func(void* data) {
@@ -178,6 +178,7 @@ static void io_error_func(void* data) {
 
 	printf("!!! ");
 	vprintf(d->fmt, d->args);
+	printf("\n");
 }
 
 
@@ -185,6 +186,7 @@ static void io_print_func(void* data) {
 	struct io_async_func_data* d = (struct io_async_func_data*)data;
 
 	vprintf(d->fmt, d->args);
+	printf("\n");
 }
 
 void io_printfln(const char* const fmt, ...) {
@@ -235,4 +237,19 @@ void io_message(const char* jid, const char* msg) {
 
 	io_printfln("%s: %s", node, msg);
 	free(s);
+}
+
+static char* pass;
+void io_getpass_func(void* data) {
+	char** pass = (char**) data;
+
+	*pass = getpass("password: ");
+	rl_already_prompted = true;
+}
+
+char* io_getpass() {
+	rl_callback_handler_remove();
+	io_async_print(io_getpass_func, &pass);
+	rl_callback_handler_install(prompt, handle_line_fake);
+	return pass;
 }
