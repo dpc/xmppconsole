@@ -20,4 +20,5 @@ void io_message(const char* jid, const char* msg);
 void io_debug(const char * const fmt, ...);
 void io_printfln(const char* const fmt, ...);
 
+char* io_getpass();
 #endif

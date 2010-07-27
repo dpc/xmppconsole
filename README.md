@@ -4,7 +4,7 @@
 command-line.
 
 Readline library is used in a neat way to server asynchronous display
-(see ./src/io.c). It looks very nice, really - clean and simple.
+(see ./src/io.c). It looks very nice, really -- clean and simple.
 
 Libstrophe library is used to handle XMPP communication.
 
