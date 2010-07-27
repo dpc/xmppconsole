@@ -1,12 +1,12 @@
 AUTOMAKE_OPTIONS = subdir-objects
 
-AM_CFLAGS = -O0 -g -Wall -pedantic -pedantic-errors -fPIC -std=gnu99
+AM_CFLAGS = @AM_CFLAGS@ -Wno-uninitialized -Wall -fPIC -std=gnu99
 
 GIT_VERSION := $(shell sh -c 'git describe --dirty | sed s/^v//')
 DEFS += -DGIT_VERSION=\"$(GIT_VERSION)\"
 
-XMPPCONSOLE_CFLAGS = $(AM_CFLAGS)
-XMPPCONSOLE_LIBS = -lstrophe $(PARSER_LIBS) -lssl -lresolv -lreadline
+XMPPCONSOLE_CFLAGS = $(AM_CFLAGS) @LIBSTROPHE_CFLAGS@
+XMPPCONSOLE_LIBS = @LIBSTROPHE_LIBS@ -lreadline
 
 ## Main build targets
 bin_PROGRAMS = xmppconsole
