@@ -145,7 +145,10 @@ static void conn_handler(
 		xmpp_stanza_release(pres);
 	} else {
 		io_notification("Connection failed.");
-		net_disconnect();
+		/* This will segfault as </stream:stream> */
+		//net_disconnect();
+		/* FIXME: is this a memleak? */
+		conn = NULL;
 	}
 
 }
