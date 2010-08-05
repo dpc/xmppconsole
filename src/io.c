@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <sys/select.h>
 
 #include "util.h"
 #include "main.h"
@@ -232,7 +233,7 @@ void io_message(const char* jid, const char* msg) {
 	char* s;
 	char* node;
    
-	s = safe_strdup(jid);
+	s = OOM_CHECK(strdup(jid));
 	node = strtok(s, "@");
 
 	io_printfln("%s: %s", node, msg);

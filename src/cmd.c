@@ -36,7 +36,7 @@ static void cmd_tokenize_int(
 		++end;
 	}
 
-	new_token->name = safe_strndup(line, end - line);
+	new_token->name = OOM_CHECK(strndup(line, end - line));
 
 	cmd_tokenize_int(&(new_token->next), end, stop);
 }
@@ -114,7 +114,7 @@ char* cmd_subcmd_matches_generator(
 		ret = cmd_subcmd_matches_generator_cur_root;
 		cmd_subcmd_matches_generator_cur_root++;
 		if (strncmp((*ret)->name, text, strlen(text)) == 0) {
-			return safe_strdup((*ret)->name);
+			return OOM_CHECK(strdup((*ret)->name));
 		}
 	}
 
@@ -136,7 +136,7 @@ char* cmd_customcompleter_matches_generator(
 				cmd_customcompleter_matches_generator_tokens
 				))) {
 		if (strncmp(str, text, strlen(text)) == 0) {
-			return safe_strdup(str);
+			return OOM_CHECK(strdup(str));
 		}
 	}
 

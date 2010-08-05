@@ -133,7 +133,7 @@ char* cmd_select_complete_h(int i, const struct cmd_tokenized_node* tokens) {
 		q = msg_queue_iterate(q);
 
 		if (!msg_queue_empty(tq)) {
-			return safe_strdup(msg_queue_jid(tq));
+			return OOM_CHECK(strdup(msg_queue_jid(tq)));
 		}
 	}
 

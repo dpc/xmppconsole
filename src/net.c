@@ -11,7 +11,7 @@
 static xmpp_ctx_t *ctx = NULL;
 static xmpp_conn_t *conn = NULL;
 
-int version_handler(
+int handle_version(
 		xmpp_conn_t * const conn, xmpp_stanza_t * const stanza,
 		void * const userdata
 		)
@@ -62,8 +62,40 @@ int version_handler(
 	return 1;
 }
 
+int handle_roster_reply(xmpp_conn_t * const conn,
+		 xmpp_stanza_t * const stanza,
+		 void * const userdata)
+{
+    xmpp_stanza_t *query, *item;
+    char *type, *name;
 
-int message_handler(
+    type = xmpp_stanza_get_type(stanza);
+    if (strcmp(type, "error") == 0)
+	fprintf(stderr, "ERROR: query failed\n");
+    else {
+	query = xmpp_stanza_get_child_by_name(stanza, "query");
+	io_printfln("Roster:");
+	for (item = xmpp_stanza_get_children(query); item; 
+	     item = xmpp_stanza_get_next(item))
+	    if ((name = xmpp_stanza_get_attribute(item, "name")))
+			io_printfln("\t %s (%s) sub=%s", 
+		       name,
+		       xmpp_stanza_get_attribute(item, "jid"),
+		       xmpp_stanza_get_attribute(item, "subscription"));
+	    else
+			io_printfln("\t %s sub=%s",
+		       xmpp_stanza_get_attribute(item, "jid"),
+		       xmpp_stanza_get_attribute(item, "subscription"));
+	io_printfln("END OF LIST");
+    }
+
+
+    return 0;
+}
+
+
+
+int handle_message(
 		xmpp_conn_t * const conn, xmpp_stanza_t * const stanza,
 		void * const userdata
 		)
@@ -81,7 +113,7 @@ int message_handler(
 	from = xmpp_stanza_get_attribute(stanza, "from");
 	q = msg_queue_get(from);
 	msg_queue_write(q, intext);
-
+	xmpp_free(ctx, intext);
 	return 1;
 }
 
@@ -125,8 +157,35 @@ static void connected(xmpp_conn_t* const conn) {
 	io_prompt_set(NET_ST_OFFLINE);
 }
 
+static void net_query_roster() {
+	xmpp_stanza_t* iq;
+	xmpp_stanza_t* query;
+	iq = xmpp_stanza_new(ctx);
+	xmpp_stanza_set_name(iq, "iq");
+	xmpp_stanza_set_type(iq, "get");
+	xmpp_stanza_set_id(iq, "roster1");
+
+	query = xmpp_stanza_new(ctx);
+	xmpp_stanza_set_name(query, "query");
+	xmpp_stanza_set_ns(query, XMPP_NS_ROSTER);
+
+	xmpp_stanza_add_child(iq, query);
+
+	/* we can release the stanza since it belongs to iq now */
+	xmpp_stanza_release(query);
+
+	/* set up reply handler */
+	xmpp_id_handler_add(conn, handle_roster_reply, "roster1", ctx);
+
+	/* send out the stanza */
+	xmpp_send(conn, iq);
+
+	/* release the stanza */
+	xmpp_stanza_release(iq);
+}
+
 static void conn_handler(
-		xmpp_conn_t * const conn, const xmpp_conn_event_t status,
+		xmpp_conn_t * const _conn, const xmpp_conn_event_t status,
 		const int error, xmpp_stream_error_t * const stream_error,
 		void * const userdata
 		)
@@ -134,15 +193,17 @@ static void conn_handler(
 	xmpp_stanza_t* pres;
 
 	if (status == XMPP_CONN_CONNECT) {
-		connected(conn);
+		connected(_conn);
 
-		xmpp_handler_add(conn, version_handler, "jabber:iq:version", "iq", NULL, ctx);
-		xmpp_handler_add(conn, message_handler, NULL, "message", NULL, ctx);
+		xmpp_handler_add(_conn, handle_version, "jabber:iq:version", "iq", NULL, ctx);
+		xmpp_handler_add(_conn, handle_message, NULL, "message", NULL, ctx);
 
 		pres = xmpp_stanza_new(ctx);
 		xmpp_stanza_set_name(pres, "presence");
-		xmpp_send(conn, pres);
+		xmpp_send(_conn, pres);
 		xmpp_stanza_release(pres);
+
+		net_query_roster();
 	} else {
 		io_notification("Connection failed.");
 		/* This will segfault as </stream:stream> */

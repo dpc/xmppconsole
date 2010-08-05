@@ -24,7 +24,7 @@ msg_queue_t msg_queue_get(const char* jid) {
 
 	if (!q) {
 		NEW(q);
-		q->jid = safe_strdup(jid);
+		q->jid = OOM_CHECK(strdup(jid));
 		HASH_ADD_KEYPTR(hh, queues, q->jid, strlen(q->jid), q);
 	}
 
@@ -33,12 +33,11 @@ msg_queue_t msg_queue_get(const char* jid) {
 }
 
 
-void msg_queue_write(msg_queue_t q, char* msg) {
+void msg_queue_write(msg_queue_t q, const char* msg) {
 	msg_list_node_t new_node;
 
 	if (q == active_queue) {
 		io_message(q->jid, msg);
-		FREE(msg);
 		return;
 	}
 
@@ -47,7 +46,7 @@ void msg_queue_write(msg_queue_t q, char* msg) {
 	}
 
 	NEW(new_node);
-	new_node->msg = msg;
+	new_node->msg = OOM_CHECK(strdup(msg));
 
 	if (q->last) {
 		q->last->next = new_node;

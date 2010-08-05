@@ -9,7 +9,7 @@ void msg_init();
 void msg_deinit();
 
 msg_queue_t msg_queue_get(const char* jid);
-void msg_queue_write(msg_queue_t q, char* msg);
+void msg_queue_write(msg_queue_t q, const char* msg);
 char* msg_queue_read(msg_queue_t q);
 const char* msg_queue_jid(msg_queue_t q);
 bool msg_queue_empty(msg_queue_t q);
