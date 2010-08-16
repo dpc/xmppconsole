@@ -1,7 +1,7 @@
 #ifndef __XC_MSG_H__
 #define __XC_MSG_H__
 
-#include "util.h"
+#include <stdbool.h>
 
 typedef struct msg_queue *msg_queue_t;
 

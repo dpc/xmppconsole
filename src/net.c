@@ -7,6 +7,7 @@
 #include "main.h"
 #include "util.h"
 #include "msg.h"
+#include "roster.h"
 
 static xmpp_ctx_t *ctx = NULL;
 static xmpp_conn_t *conn = NULL;
@@ -63,37 +64,35 @@ int handle_version(
 }
 
 int handle_roster_reply(xmpp_conn_t * const conn,
-		 xmpp_stanza_t * const stanza,
-		 void * const userdata)
+		xmpp_stanza_t * const stanza,
+		void * const userdata)
 {
-    xmpp_stanza_t *query, *item;
-    char *type, *name;
+	xmpp_stanza_t *query, *item;
+	char *type, *name;
 
-    type = xmpp_stanza_get_type(stanza);
-    if (strcmp(type, "error") == 0)
-	fprintf(stderr, "ERROR: query failed\n");
-    else {
+	type = xmpp_stanza_get_type(stanza);
+	if (strcmp(type, "error") == 0) {
+		io_error("Roster IQ query have failed.");
+		return 0;
+	}
+
 	query = xmpp_stanza_get_child_by_name(stanza, "query");
-	io_printfln("Roster:");
 	for (item = xmpp_stanza_get_children(query); item; 
-	     item = xmpp_stanza_get_next(item))
-	    if ((name = xmpp_stanza_get_attribute(item, "name")))
-			io_printfln("\t %s (%s) sub=%s", 
-		       name,
-		       xmpp_stanza_get_attribute(item, "jid"),
-		       xmpp_stanza_get_attribute(item, "subscription"));
-	    else
-			io_printfln("\t %s sub=%s",
-		       xmpp_stanza_get_attribute(item, "jid"),
-		       xmpp_stanza_get_attribute(item, "subscription"));
-	io_printfln("END OF LIST");
-    }
-
+			item = xmpp_stanza_get_next(item)) {
+		if ((!(name = xmpp_stanza_get_attribute(item, "name")))) {
+			name = "";
+		}
+			roster_item_received(
+					xmpp_stanza_get_attribute(item, "jid"),
+					name,
+					roster_subscription_to_enum(
+						xmpp_stanza_get_attribute(item, "subscription")
+						)
+					);
+	}
 
     return 0;
 }
-
-
 
 int handle_message(
 		xmpp_conn_t * const conn, xmpp_stanza_t * const stanza,
@@ -110,8 +109,9 @@ int handle_message(
 	intext = xmpp_stanza_get_text(
 			xmpp_stanza_get_child_by_name(stanza, "body")
 			);
-	from = xmpp_stanza_get_attribute(stanza, "from");
+	from = xmpp_jid_bare(ctx, xmpp_stanza_get_attribute(stanza, "from"));
 	q = msg_queue_get(from);
+	xmpp_free(ctx, from);
 	msg_queue_write(q, intext);
 	xmpp_free(ctx, intext);
 	return 1;
@@ -152,6 +152,8 @@ void net_send(const char* const str) {
 
 static void connected(xmpp_conn_t* const conn) {
 	const char* full_jid = xmpp_conn_get_bound_jid(conn);
+
+	roster_init();
 
 	io_notification("Connected as `%s'.", full_jid);
 	io_prompt_set(NET_ST_OFFLINE);
@@ -236,6 +238,7 @@ void net_init(char* jid, char* passwd) {
 
 void net_disconnect() {
 	if (conn != NULL) {
+		roster_deinit();
 		xmpp_conn_release(conn);
 		conn = NULL;
 		io_notification("Disconnected.");

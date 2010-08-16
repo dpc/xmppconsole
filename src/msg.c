@@ -1,6 +1,7 @@
 #include "uthash.h"
 #include "msg.h"
 #include "io.h"
+#include "util.h"
 
 typedef struct msg_list_node {
 	char* msg;

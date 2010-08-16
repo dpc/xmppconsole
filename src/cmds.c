@@ -4,6 +4,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include "msg.h"
+#include "roster.h"
+#include "util.h"
 
 #include "cmds.h"
 
@@ -119,25 +121,41 @@ ret:
 	return;
 }
 
-char* cmd_select_complete_h(int i, const struct cmd_tokenized_node* tokens) {
+char* cmd_select_complete_h(int n, const struct cmd_tokenized_node* tokens) {
 	static msg_queue_t q;
-	msg_queue_t tq;
+	static msg_queue_t prev_q;
+	static roster_item_t i;
+	static bool was_unread;
 
-	if (i == 0) {
+	if (n == 0) {
 		q = msg_queue_iterate(NULL);
+		i = NULL;
+		prev_q = NULL;
+		was_unread = false;
 	}
 
 	while (q) {
 
-		tq = q;
+		prev_q = q;
 		q = msg_queue_iterate(q);
 
-		if (!msg_queue_empty(tq)) {
-			return OOM_CHECK(strdup(msg_queue_jid(tq)));
+		if (!msg_queue_empty(prev_q)) {
+			was_unread = true;
+			return OOM_CHECK(strdup(msg_queue_jid(prev_q)));
 		}
 	}
 
+	if (was_unread) {
+		return NULL;
+	}
+
+	i = roster_iterate(i);
+	if (i) {
+		return OOM_CHECK(strdup(roster_item_get_jid(i)));
+	}
+
 	return NULL;
+
 }
 
 
