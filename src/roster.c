@@ -10,16 +10,16 @@ struct roster_item {
 	UT_hash_handle hh;
 };
 
-static roster_item_t roster = NULL;
+static roster_item_t* roster = NULL;
 
 
-roster_item_t roster_item_received(
+roster_item_t* roster_item_received(
 		const char* jid,
 		const char* name,
 		subscription_state_t sub
 		) {
-	roster_item_t i = NULL;
-	roster_item_t n = NULL;
+	roster_item_t* i = NULL;
+	roster_item_t* n = NULL;
 
 	HASH_FIND_STR(roster, jid, i);
 
@@ -59,19 +59,19 @@ subscription_state_t roster_subscription_to_enum(const char* str) {
 	return SUBSCRIPTION_NONE;
 }
 
-char* roster_item_get_name(roster_item_t i) {
+char* roster_item_get_name(roster_item_t* i) {
 	return OOM_CHECK(strdup(i->name));
 }
 
-char* roster_item_get_jid(roster_item_t i) {
+char* roster_item_get_jid(roster_item_t* i) {
 	return OOM_CHECK(strdup(i->jid));
 }
 
-subscription_state_t roster_item_get_subscription(roster_item_t i) {
+subscription_state_t roster_item_get_subscription(roster_item_t* i) {
 	return i->subscription;
 }
 
-roster_item_t roster_iterate(roster_item_t i) {
+roster_item_t* roster_iterate(roster_item_t* i) {
 	if (i == NULL) {
 		return roster;
 	}
@@ -79,7 +79,7 @@ roster_item_t roster_iterate(roster_item_t i) {
 	return i->hh.next;
 }
 
-void roster_item_free(roster_item_t i) {
+void roster_item_free(roster_item_t* i) {
 	free(i->jid);
 	free(i->name);
 	free(i);
@@ -90,7 +90,7 @@ void roster_init() {
 }
 
 void roster_deinit() {
-	roster_item_t current_item;
+	roster_item_t* current_item;
 
 	while (roster) {
 		current_item = roster;

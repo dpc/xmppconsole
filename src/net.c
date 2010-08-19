@@ -99,9 +99,9 @@ int handle_message(
 		void * const userdata
 		)
 {
-	const char* from;
+	char* from;
 	char *intext;
-	msg_queue_t q;
+	msg_queue_t* q;
 
 	if(!xmpp_stanza_get_child_by_name(stanza, "body")) return 1;
 	if(!strcmp(xmpp_stanza_get_attribute(stanza, "type"), "error")) return 1;
@@ -118,7 +118,7 @@ int handle_message(
 }
 
 void net_send(const char* const str) {
-	msg_queue_t q;
+	msg_queue_t* q;
 	const char* jid;
 
 	xmpp_stanza_t *msg, *body, *text;

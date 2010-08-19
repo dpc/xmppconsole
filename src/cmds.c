@@ -105,7 +105,7 @@ ret:
 }
 
 void cmd_unread_h(const struct cmd_tokenized_node* tokens) {
-	msg_queue_t q;
+	msg_queue_t* q;
 
 	ARGEND;
 
@@ -122,9 +122,9 @@ ret:
 }
 
 char* cmd_select_complete_h(int n, const struct cmd_tokenized_node* tokens) {
-	static msg_queue_t q;
-	static msg_queue_t prev_q;
-	static roster_item_t i;
+	static msg_queue_t* q;
+	static msg_queue_t* prev_q;
+	static roster_item_t* i;
 	static bool was_unread;
 
 	if (n == 0) {

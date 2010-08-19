@@ -15,11 +15,11 @@ struct msg_queue {
 	UT_hash_handle hh;
 };
 
-msg_queue_t queues = NULL;
-msg_queue_t active_queue = NULL;
+msg_queue_t* queues = NULL;
+msg_queue_t* active_queue = NULL;
 
-msg_queue_t msg_queue_get(const char* jid) {
-	msg_queue_t q;
+msg_queue_t* msg_queue_get(const char* jid) {
+	msg_queue_t* q;
 
 	HASH_FIND_STR(queues, jid, q);
 
@@ -34,7 +34,7 @@ msg_queue_t msg_queue_get(const char* jid) {
 }
 
 
-void msg_queue_write(msg_queue_t q, const char* msg) {
+void msg_queue_write(msg_queue_t* q, const char* msg) {
 	msg_list_node_t new_node;
 
 	if (q == active_queue) {
@@ -59,7 +59,7 @@ void msg_queue_write(msg_queue_t q, const char* msg) {
 	}
 }
 
-char* msg_queue_read(msg_queue_t q) {
+char* msg_queue_read(msg_queue_t* q) {
 	char* ret;
 	msg_list_node_t ret_node;
 
@@ -79,7 +79,7 @@ char* msg_queue_read(msg_queue_t q) {
 	return ret;
 }
 
-msg_queue_t msg_queue_iterate(msg_queue_t q) {
+msg_queue_t* msg_queue_iterate(msg_queue_t* q) {
 	if (q == NULL) {
 		return queues;
 	}
@@ -87,11 +87,11 @@ msg_queue_t msg_queue_iterate(msg_queue_t q) {
 	return q->hh.next;
 }
 
-bool msg_queue_empty(msg_queue_t q) {
+bool msg_queue_empty(msg_queue_t* q) {
 	return !q->first;
 }
 
-void msg_active_queue_set(msg_queue_t q) {
+void msg_active_queue_set(msg_queue_t* q) {
 	char* msg;
 
 	io_notification("Chat with: %s", q->jid);
@@ -102,11 +102,11 @@ void msg_active_queue_set(msg_queue_t q) {
 	active_queue = q;
 }
 
-msg_queue_t msg_active_queue_get() {
+msg_queue_t* msg_active_queue_get() {
 	return active_queue;
 }
 
-const char* msg_queue_jid(msg_queue_t q) {
+const char* msg_queue_jid(msg_queue_t* q) {
 	return q->jid;
 }
 
@@ -120,7 +120,7 @@ static void msg_list_free(msg_list_node_t n) {
 	}
 }
 
-static void msg_queue_free(msg_queue_t q) {
+static void msg_queue_free(msg_queue_t* q) {
 	msg_list_free(q->first);
 	FREE(q->jid);
 	FREE(q);
@@ -131,7 +131,7 @@ void msg_init() {
 }
 
 void msg_deinit() {
-	msg_queue_t curren_list;
+	msg_queue_t* curren_list;
 
 	while (queues) {
 		curren_list = queues;
