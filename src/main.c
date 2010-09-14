@@ -1,6 +1,8 @@
 #include "io.h"
 #include "net.h"
 #include "msg.h"
+#include "mem.h"
+
 #include <sys/select.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -13,6 +15,7 @@ const char* const prog_name = "xmppconsole";
 
 int main() {
 
+	mem_init();
 	io_init();
 	msg_init();
 	net_init();
@@ -29,5 +32,6 @@ int main() {
 	net_deinit();
 	msg_deinit();
 	io_deinit();
+	mem_deinit();
 	return 0;
 }

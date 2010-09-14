@@ -105,13 +105,15 @@ ret:
 }
 
 void cmd_unread_h(const struct cmd_tokenized_node* tokens) {
+	msg_queue_iterator_t* i;
 	msg_queue_t* q;
 
 	ARGEND;
 
-	q = NULL;
+	i = NULL;
 	io_notification("Unread list:");
-	while ((q = msg_queue_iterate(q))) {
+	while ((i = msg_queue_iterate(i))) {
+		q = msg_queue_iterator_get_queue(i);
 		if (!msg_queue_empty(q)) {
 			io_printfln("%s", msg_queue_jid(q));
 		}
@@ -122,26 +124,26 @@ ret:
 }
 
 char* cmd_select_complete_h(int n, const struct cmd_tokenized_node* tokens) {
+	static msg_queue_iterator_t* qi;
 	static msg_queue_t* q;
-	static msg_queue_t* prev_q;
 	static roster_item_t* i;
 	static bool was_unread;
 
 	if (n == 0) {
-		q = msg_queue_iterate(NULL);
+		qi = msg_queue_iterate(NULL);
+		q = NULL;
 		i = NULL;
-		prev_q = NULL;
 		was_unread = false;
 	}
 
-	while (q) {
+	while (qi) {
 
-		prev_q = q;
-		q = msg_queue_iterate(q);
+		q = msg_queue_iterator_get_queue(qi);
+		qi = msg_queue_iterate(qi);
 
-		if (!msg_queue_empty(prev_q)) {
+		if (!msg_queue_empty(q)) {
 			was_unread = true;
-			return OOM_CHECK(strdup(msg_queue_jid(prev_q)));
+			return OOM_CHECK(strdup(msg_queue_jid(q)));
 		}
 	}
 

@@ -2,6 +2,7 @@
 
 #include "uthash.h"
 #include "util.h"
+#include <stdlib.h>
 
 struct roster_item {
 	char* jid;
