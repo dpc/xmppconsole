@@ -4,7 +4,6 @@
 #include <stdbool.h>
 
 typedef struct msg_queue msg_queue_t;
-typedef struct msg_queue_iterator msg_queue_iterator_t;
 
 void msg_init();
 void msg_deinit();
@@ -16,6 +15,6 @@ const char* msg_queue_jid(msg_queue_t* q);
 bool msg_queue_empty(msg_queue_t* q);
 void msg_active_queue_set(msg_queue_t* q);
 msg_queue_t* msg_active_queue_get();
-msg_queue_iterator_t* msg_queue_iterate(msg_queue_iterator_t* i);
-msg_queue_t* msg_queue_iterator_get_queue(msg_queue_iterator_t* i);
+msg_queue_t* msg_queue_iterate(msg_queue_t* q);
+
 #endif

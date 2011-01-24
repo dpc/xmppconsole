@@ -2,6 +2,8 @@
 #define __XC_UTIL_H__
 
 #include <stddef.h>
+#include <string.h>
+#include <stdlib.h>
 #include <assert.h>
 #include <stdbool.h>
 

@@ -126,6 +126,11 @@ void net_send(const char* const str) {
 		io_error("No recipient selected.");
 		return;
 	}
+	if (!conn) {
+		io_error("Not connected.");
+		return;
+	}
+
 	jid = msg_queue_jid(q);
 
 	msg = xmpp_stanza_new(ctx);
