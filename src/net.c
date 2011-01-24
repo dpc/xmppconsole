@@ -193,25 +193,45 @@ static void conn_handler(
 		)
 {
 	xmpp_stanza_t* pres;
+	char* text;
 
-	if (status == XMPP_CONN_CONNECT) {
-		connected(_conn);
+	switch (status) {
+		case XMPP_CONN_CONNECT:
+			connected(_conn);
 
-		xmpp_handler_add(_conn, handle_version, "jabber:iq:version", "iq", NULL, ctx);
-		xmpp_handler_add(_conn, handle_message, NULL, "message", NULL, ctx);
+			xmpp_handler_add(_conn, handle_version, "jabber:iq:version", "iq", NULL, ctx);
+			xmpp_handler_add(_conn, handle_message, NULL, "message", NULL, ctx);
 
-		pres = xmpp_stanza_new(ctx);
-		xmpp_stanza_set_name(pres, "presence");
-		xmpp_send(_conn, pres);
-		xmpp_stanza_release(pres);
+			pres = xmpp_stanza_new(ctx);
+			xmpp_stanza_set_name(pres, "presence");
+			xmpp_send(_conn, pres);
+			xmpp_stanza_release(pres);
 
-		net_query_roster();
-	} else {
-		io_notification("Connection failed.");
-		/* This will segfault as </stream:stream> */
-		//net_disconnect();
-		/* FIXME: is this a memleak? */
-		conn = NULL;
+			net_query_roster();
+			break;
+		case XMPP_CONN_DISCONNECT:
+			if (stream_error) {
+				text = stream_error->text ? stream_error->text : "no error text";
+				io_notification("Connection disconnected. (type: %d, text: %s)", stream_error->type, text);
+			} else {
+				io_notification("Disconnected.");
+			}
+			/* This will segfault as </stream:stream> */
+			//net_disconnect();
+			/* FIXME: is this a memleak? */
+			conn = NULL;
+			break;
+		case XMPP_CONN_FAIL:
+			if (stream_error) {
+				text = stream_error->text ? stream_error->text : "no error text";
+				io_notification("Connection failed. (type: %d, text: %s)", stream_error->type, text);
+			} else {
+				io_notification("Connection failed.");
+			}
+			break;
+		default:
+			assert(0);
+			abort();
 	}
 
 }

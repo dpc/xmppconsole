@@ -1,4 +1,5 @@
 #include "io.h"
+#include "li.h"
 #include "net.h"
 #include "msg.h"
 #include "mem.h"
@@ -17,6 +18,7 @@ int main() {
 
 	mem_init();
 	io_init();
+	li_init();
 	msg_init();
 	net_init();
 
@@ -31,6 +33,7 @@ int main() {
 	io_printfln("Exiting...");
 	net_deinit();
 	msg_deinit();
+	li_deinit();
 	io_deinit();
 	mem_deinit();
 	return 0;
