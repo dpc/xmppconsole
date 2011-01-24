@@ -221,10 +221,7 @@ static void conn_handler(
 			} else {
 				io_notification("Disconnected.");
 			}
-			/* This will segfault as </stream:stream> */
-			//net_disconnect();
-			/* FIXME: is this a memleak? */
-			conn = NULL;
+			conn = 0;
 			break;
 		case XMPP_CONN_FAIL:
 			if (stream_error) {

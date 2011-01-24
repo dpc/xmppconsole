@@ -41,16 +41,30 @@ int io_handle_enter(int x, int y) {
 
 	cmd_execute(line);
 
-
-
 	if (strcmp(line, "") != 0) {
 		add_history(line);
 	}
 	free(line);
 
-	/* force readline to think that the current line was "eaten" and execute */
+	rl_set_prompt(prompt);
+	rl_redisplay();
+
+	/* force readline to think that the current line was "eaten" and executed */
 	rl_done = 1;
 	return 0;
+}
+
+static void install_line_handler() {
+	if (rl_bind_key(RETURN, io_handle_enter)) {
+		io_printfln("failed to bind RETURN");
+		abort();
+	}
+	rl_callback_handler_install(prompt, handle_line_fake);
+}
+
+static void remove_line_handler() {
+	rl_unbind_key(RETURN);
+	rl_callback_handler_remove();
 }
 
 void io_debug_set(bool s) {
@@ -59,18 +73,6 @@ void io_debug_set(bool s) {
 
 bool io_debug_get() {
 	return debug_on;
-}
-
-void io_init() {
-	FD_ZERO(&fds);
-	io_prompt_set(NET_ST_DISCONNECTED);
-	rl_callback_handler_install(prompt, handle_line_fake);
-	rl_readline_name = prog_name;
-	rl_attempted_completion_function = cmd_root_autocompleter;
-	if (rl_bind_key(RETURN, io_handle_enter)) {
-		io_printfln("failed to bind RETURN");
-		abort();
-	}
 }
 
 void io_nonblock_handle() {
@@ -88,10 +90,6 @@ void io_nonblock_handle() {
 		return;
 	}
 	rl_callback_read_char();
-}
-
-void io_deinit() {
-	rl_callback_handler_remove();
 }
 
 void io_prompt_set(net_status_t st) {
@@ -142,16 +140,20 @@ static void io_async_print(print_func func, void* data) {
 
 	saved_point = rl_point;
 	saved_line = rl_copy_text(0, rl_end);
+
 	rl_set_prompt("");
 	rl_replace_line("", 0);
 	rl_redisplay();
 	(*func)(data);
 	if (prog_running) {
 		rl_set_prompt(prompt);
+		rl_replace_line(saved_line, 0);
+		rl_point = saved_point;
+		rl_redisplay();
+	} else {
+		/* FIXME: This leaves prompt on /quit. Fix it. */
+		rl_redisplay();
 	}
-	rl_replace_line(saved_line, 0);
-	rl_point = saved_point;
-	rl_redisplay();
 	free(saved_line);
 }
 
@@ -159,6 +161,7 @@ struct io_async_func_data {
 	const char* fmt;
 	va_list args;
 };
+
 /*
 void io_vprintfln(const char* const fmt, va_list args) {
 
@@ -181,7 +184,6 @@ static void io_error_func(void* data) {
 	vprintf(d->fmt, d->args);
 	printf("\n");
 }
-
 
 static void io_print_func(void* data) {
 	struct io_async_func_data* d = (struct io_async_func_data*)data;
@@ -219,7 +221,6 @@ void io_error(const char * const fmt, ...) {
 	va_end(d.args);
 }
 
-
 void io_notification(const char * const fmt, ...) {
 	struct io_async_func_data d;
 	d.fmt = fmt;
@@ -240,17 +241,34 @@ void io_message(const char* jid, const char* msg) {
 	free(s);
 }
 
-static char* pass;
-void io_getpass_func(void* data) {
-	char** pass = (char**) data;
+void io_getpass_func(void* d) {
+	char** ret = (char**)d;
+	char* pass;
 
-	*pass = getpass("password: ");
-	rl_already_prompted = true;
+	pass = getpass("password: ");
+	*ret = strdup(pass);
+	//rl_already_prompted = true;
 }
 
 char* io_getpass() {
-	rl_callback_handler_remove();
+	char *pass;
+	remove_line_handler();
 	io_async_print(io_getpass_func, &pass);
-	rl_callback_handler_install(prompt, handle_line_fake);
+	install_line_handler();
 	return pass;
 }
+
+void io_init() {
+	FD_ZERO(&fds);
+	io_prompt_set(NET_ST_DISCONNECTED);
+	install_line_handler();
+	rl_readline_name = prog_name;
+	rl_attempted_completion_function = cmd_root_autocompleter;
+
+}
+
+void io_deinit() {
+	remove_line_handler();
+}
+
+

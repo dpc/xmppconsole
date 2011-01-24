@@ -122,20 +122,22 @@ char* cmd_subcmd_matches_generator(
 	return NULL;
 }
 
-static cmd_descriptor_t cmd_customcompleter_matches_generator_cur_cmd = NULL;
-static cmd_tokenized_node_t cmd_customcompleter_matches_generator_tokens = NULL;
-static int cmd_customcompleter_matches_generator_i = 0;
+static cmd_descriptor_t cmd_completer_matches_generator_cur_cmd = NULL;
+static cmd_tokenized_node_t cmd_completer_matches_generator_tokens = NULL;
+static int cmd_completer_matches_generator_i = 0;
 
-char* cmd_customcompleter_matches_generator(
+char* cmd_completer_matches_generator(
 		const char* text,
 		int state
 		) {
 	char* str;
 
-	while ((str = cmd_customcompleter_matches_generator_cur_cmd->completer(
-				cmd_customcompleter_matches_generator_i++,
-				cmd_customcompleter_matches_generator_tokens
-				))) {
+	while ((str =
+				cmd_completer_matches_generator_cur_cmd->completer(
+					cmd_completer_matches_generator_i++,
+					cmd_completer_matches_generator_tokens
+					)
+				)) {
 		if (strncmp(str, text, strlen(text)) == 0) {
 			return OOM_CHECK(strdup(str));
 		}
@@ -144,7 +146,11 @@ char* cmd_customcompleter_matches_generator(
 	return NULL;
 }
 
-
+/**
+ * Main autocompleter.
+ *
+ * Registered in readline to handle autocompletion.
+ */
 char** cmd_root_autocompleter(
 		const char *text,
 		int start, int end
@@ -153,6 +159,7 @@ char** cmd_root_autocompleter(
 	struct cmd_traverse_state state;
 	char** matches = NULL;
 
+	/* don't use readline default completion */
 	rl_attempted_completion_over = 1;
 
 	tokens = state.token = cmd_tokenize(rl_line_buffer, rl_line_buffer + start);
@@ -161,13 +168,15 @@ char** cmd_root_autocompleter(
 	cmd_traverse(&state);
 
 	if (state.cmd && state.cmd->completer) {
-		cmd_customcompleter_matches_generator_cur_cmd = state.cmd;
-		cmd_customcompleter_matches_generator_i = 0;
-		cmd_customcompleter_matches_generator_tokens = tokens;
-		matches = rl_completion_matches(text, cmd_customcompleter_matches_generator);
+		cmd_completer_matches_generator_cur_cmd = state.cmd;
+		cmd_completer_matches_generator_i = 0;
+		cmd_completer_matches_generator_tokens = tokens;
+		matches = rl_completion_matches(text, cmd_completer_matches_generator);
 	} else if (state.root) {
 		cmd_subcmd_matches_generator_cur_root = state.root;
 		matches = rl_completion_matches(text, cmd_subcmd_matches_generator);
+	} else {
+		/* stat.root == 0 => no possible completion */
 	}
 
 	cmd_tokenized_free(tokens);

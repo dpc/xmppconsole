@@ -47,7 +47,6 @@ void cmd_help_h(const struct cmd_tokenized_node* tokens) {
 	io_printfln("Type text followed by ENTER to send a message.");
 }
 
-
 void cmd_disconnect_h(const struct cmd_tokenized_node* tokens) {
 	ARGEND;
 
@@ -78,7 +77,7 @@ void cmd_debug_switch_h(const struct cmd_tokenized_node* tokens) {
 
 	ARGEND;
 
-	io_debug_get(!io_debug_get());
+	io_debug_set(!io_debug_get());
 
 ret:
 	return;
