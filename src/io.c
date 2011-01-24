@@ -1,8 +1,8 @@
 #include "io.h"
 #include "cmd.h"
+#include <stdio.h>
 #include <readline/readline.h>
 #include <readline/history.h>
-#include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdarg.h>
